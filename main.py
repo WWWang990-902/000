@@ -3,6 +3,7 @@ import tkinter.ttk as ttk
 import tkinter.messagebox
 from tkinter.simpledialog import askinteger, askfloat
 from tkinter.messagebox import askyesno
+import re
 
 def BMI():
     height = askfloat(title="Height", prompt='请输入您的身高(cm):')
@@ -36,13 +37,59 @@ def BMR():
     tk.messagebox.showinfo(title='基础代谢', message=info)
 
 def run():
-    pass
+    weight = askfloat(title="Weight", prompt='请输入您的体重(kg):')
+    distance = askfloat(title="Distance", prompt="请输入跑步总距离(km):")
+    time = askfloat(title="Time", prompt='请输入跑步总时长(min):')
+    global run_result
+    run_result=int(weight*(time/60)*30/(time/distance/2.5))
+    info = '您的跑步热量消耗估计值为:' + str(run_result) + 'Kcal'
+    run_present.set(''.join('跑步:' + str(run_result)) + ' Kcal')
+    tk.messagebox.showinfo(title='跑步', message=info)
+
 def jump():
-    pass
-def biking():
-    pass
+    weight = askfloat(title="Weight", prompt='请输入您的体重(kg):')
+    count = askfloat(title="Count", prompt="请输入跳绳数量(个):")
+    time = askfloat(title="Time", prompt='请输入跳绳总时长(min):')
+    v=count/time
+    if v<100:
+        MET=8.8
+    elif v>=100 and v<120:
+        MET=11.8
+    else:
+        MET=12.3
+    global jump_result
+    jump_result = int(time*MET*weight*3.5/200)
+    info = '您的跳绳热量消耗估计值为:' + str(jump_result) + 'Kcal'
+    jump_present.set(''.join('跳绳:' + str(jump_result)) + ' Kcal')
+    tk.messagebox.showinfo(title='跳绳', message=info)
+def bike():
+    weight = askfloat(title="Weight", prompt='请输入您的体重(kg):')
+    distance= askfloat(title="Distance", prompt="请输入骑行距离(km):")
+    time = askfloat(title="Time", prompt='请输入骑行总时长(min):')
+    v = distance/time*60 #km/h
+    if v < 10:
+        HET = 300
+    elif v >=10 and v < 15:
+        HET = 380
+    elif v>=15 and v<20:
+        HET = 600
+    elif v>=20 and v<25:
+        HET = 820
+    elif v>=25:
+        HET = 1050
+    global bike_result
+    bike_result = int(weight/65*HET*time/60)
+    info = '您的骑行热量消耗估计值为:' + str(bike_result) + 'Kcal'
+    bike_present.set(''.join('骑行:' + str(bike_result)) + ' Kcal')
+    tk.messagebox.showinfo(title='骑行', message=info)
 def sportsum():
-    pass
+    global sportsum_kcal
+    run = re.findall("\d+\.?\d*", run_present.get())
+    jump = re.findall("\d+\.?\d*", jump_present.get())
+    bike = re.findall("\d+\.?\d*", bike_present.get())
+    sportsum_kcal = int(run[0]) + int(jump[0]) + int(bike[0])
+    sportsum_present.set(''.join('运动日计:' + str(sportsum_kcal)) + ' Kcal')
+
 
 def morning():
     def choose(i):
@@ -67,7 +114,7 @@ def morning():
     foods = {0: "糕团类", 1: "粉面类", 2: "粥汤类", 3: "炸物", 4:"坚果类",5: "奶制品",6: "蛋类"}
     heats = {0:100,1:300,2:75,3:250,4:50,5:30,6:30}
     cheakboxs = {}
-    tkinter.Checkbutton(morning_window, text=foods[0], command=lambda:choose(0)).grid(row=0 + 1, sticky=tkinter.W)
+    tkinter.Checkbutton(morning_window, text=foods[0],command=lambda:choose(0)).grid(row=0 + 1, sticky=tkinter.W)
     tkinter.Checkbutton(morning_window, text=foods[1],command=lambda: choose(1)).grid(row=1 + 1,sticky=tkinter.W)
     tkinter.Checkbutton(morning_window, text=foods[2],command=lambda: choose(2)).grid(row=2 + 1,sticky=tkinter.W)
     tkinter.Checkbutton(morning_window, text=foods[3],command=lambda: choose(3)).grid(row=3 + 1,sticky=tkinter.W)
@@ -206,11 +253,16 @@ def night():
     night_window.mainloop()
 
 def eatsum():
-    morning=morning_present.get()
-    noon=noon_present.get()
-    night=night_present.get()
-    eatsum=int(morning[3:6])+int(noon[3:6])+int(night[3:6])
-    eatsum_present.set(''.join('餐食日计:' + str(eatsum)) + ' Kcal')
+    global eatsum_kcal
+    morning=re.findall("\d+\.?\d*", morning_present.get())
+    noon=re.findall("\d+\.?\d*", noon_present.get())
+    night=re.findall("\d+\.?\d*", night_present.get())
+    eatsum_kcal=int(morning[0])+int(noon[0])+int(night[0])
+    eatsum_present.set(''.join('餐食日计:' + str(eatsum_kcal)) + ' Kcal')
+
+def zhishu():
+    daily_zhishu=int((sportsum_kcal+BMR_result-eatsum_kcal)*(BMI_result-21.2)/9)
+    zhishu_present.set(''.join('今日健康指数:' + str(daily_zhishu)))
 # 界面
 root = tk.Tk()
 root.title('健康膳食计算器')
@@ -230,10 +282,21 @@ BMR_present = tk.StringVar()
 BMR_present.set("基础代谢:/")
 button_BMR=tk.Button(root,textvariable=BMR_present,width=20,font=("宋体",16),background='#C0C0C0', command=lambda: BMR())
 
-button_run=tk.Button(root,text="跑步:/",width=20,font=("宋体",16),background='#C0C0C0', command=lambda: run())
-button_jump=tk.Button(root,text="跳绳:/",width=20,font=("宋体",16),background='#C0C0C0', command=lambda: jump())
-button_biking=tk.Button(root,text="骑行:/",width=20,font=("宋体",16),background='#C0C0C0', command=lambda: biking())
-button_sportsum=tk.Button(root,text="运动日计:/",width=20,font=("宋体",16),background='#C0C0C0')
+run_present = tk.StringVar()
+run_present.set("跑步:/")
+button_run=tk.Button(root,textvariable=run_present,width=20,font=("宋体",16),background='#C0C0C0', command=lambda: run())
+
+jump_present = tk.StringVar()
+jump_present.set("跳绳:/")
+button_jump=tk.Button(root,textvariable=jump_present,width=20,font=("宋体",16),background='#C0C0C0', command=lambda: jump())
+
+bike_present = tk.StringVar()
+bike_present.set("骑行:/")
+button_biking=tk.Button(root,textvariable=bike_present,width=20,font=("宋体",16),background='#C0C0C0', command=lambda: bike())
+
+sportsum_present = tk.StringVar()
+sportsum_present.set("运动日计:/")
+button_sportsum=tk.Button(root,textvariable=sportsum_present,width=20,font=("宋体",16),background='#C0C0C0',command=lambda: sportsum())
 
 morning_present = tk.StringVar()
 morning_present.set("早餐:/")
@@ -251,7 +314,9 @@ eatsum_present = tk.StringVar()
 eatsum_present.set("餐食日计:/")
 button_eatsum=tk.Button(root,textvariable=eatsum_present,width=16,font=("宋体",16),background='#C0C0C0',command=lambda: eatsum())
 
-button_num=tk.Button(root,text="健康指数:/",width=25,font=("宋体",16),background='#C0C0C0',command=lambda: zhishu())
+zhishu_present = tk.StringVar()
+zhishu_present.set("今日健康指数:/")
+button_zhishu=tk.Button(root,textvariable=zhishu_present,width=25,font=("宋体",16),background='#C0C0C0',command=lambda: zhishu())
 
 button_BMI.grid(ipadx=4,row=1,column=0)
 button_BMR.grid(ipadx=4,row=1,column=1)
@@ -266,7 +331,7 @@ button_noon.grid(ipadx=4,row=4,column=0)
 button_night.grid(ipadx=4,row=5,column=0)
 button_eatsum.grid(ipadx=4,row=6,column=0)
 
-button_num.grid(ipadx=4,row=7,column=0,columnspan=2)
+button_zhishu.grid(ipadx=4,row=7,column=0,columnspan=2)
 
 #循环消息
 root.mainloop()
